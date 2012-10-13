@@ -16,7 +16,12 @@ Most of the current sites use a poll mechanism which is wasteful in terms of ban
 Also a polling mechanism is hard to scale when the stream is user specific.
 
 
-Setup an endpoint.
+##How to use##
 
-Embeded a widget with the endpoint url in your webpage.
-Push events to the endpoint which will then be in realtime pushed to all the users viewing that page.
+<ol>
+	<li>Create a new Channel</li>	
+	<li>Choose the type of widget (ticker, highlights ..)</li>
+	<li>Copy the embed code to your HTML page</li>
+	<li>Publish the initial data</li>
+	<li>Publish updates</li>
+</ol>
