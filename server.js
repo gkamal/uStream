@@ -55,30 +55,6 @@ rm.get('/channels/:id',function(req) {
 });
 
 
-rm.put('/channels/:channelId/session',function(req){
-	var body = vertx.Buffer();
-	req.dataHandler(function(buffer){
-		body.appendBuffer(buffer);
-	});
-	req.endHandler(function(){
-		var data = JSON.parse(body.toString());
-		req.response.statusCode = 204;
-		req.response.end("");
-	});	
-});
-
-rm.delete('/channels/:channelId/session',function(req){
-	var body = vertx.Buffer();
-	req.dataHandler(function(buffer){
-		body.appendBuffer(buffer);
-	});
-	req.endHandler(function(){
-		var data = JSON.parse(body.toString());
-		req.response.statusCode = 204;
-		req.response.end("");
-	});	
-});
-
 rm.post('/channels/:channelId/events/',function(req){
 	var body = vertx.Buffer();
 	req.dataHandler(function(buffer){
@@ -86,7 +62,6 @@ rm.post('/channels/:channelId/events/',function(req){
 	});
 	
 	req.endHandler(function(){
-		logger.info(body.toString());
 		var event = JSON.parse(body.toString());
 		event.channelId = req.params().channelId;
 		event.timeStamp = new Date();
@@ -108,11 +83,12 @@ rm.post('/channels/:channelId/events/',function(req){
 });
 
 rm.get('/channels/:channelId/events/',function(req){
-	logger.info("get events for channel " + req.params().channelId);
 	var fetchEventsForChannelMsg = {
 		action : "find",
 		collection : "events",
-		matcher : {"channelId" : req.params().channelId}
+		matcher : {"channelId" : req.params().channelId},
+		sort : {timeStamp : -1},
+		limit : 5
 	}
 	eb.send("mongo",fetchEventsForChannelMsg,function(reply) {
 		if (reply.status == 'ok') {
@@ -155,7 +131,6 @@ var mongoServerConf = {
 	"address" : "mongo",
     "db_name": "ustream"    
 }
-
 
 vertx.deployModule('vertx.mongo-persistor-v1.0',mongoServerConf);
 

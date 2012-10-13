@@ -8,6 +8,9 @@
     	function prepend(element,data) {
     		$(element).prepend('<li>' + data + '</li>');
     	}
+    	function append(element,data) {
+    		$(element).append('<li>' + data + '</li>');
+    	}
 		var eb = new vertx.EventBus('http://localhost:8080/eventbus');
 		function register(channel,element) {
 	      eb.registerHandler(channel, function(message) {
@@ -25,7 +28,7 @@
 			$.getJSON("channels/"+channel+"/events/",function(list) {
 				$.each(list,function(idx,data){
 					console.log(data);
-					prepend(element,data.title);
+					append(element,data.title);
 				});
 			});
 		}
