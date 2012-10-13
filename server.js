@@ -34,31 +34,76 @@ rm.get('/channels/:id',function(req) {
 	logger.info("get channel " + req.params().id);
 	var fetchChannelMsg = {
 		action : "findone",
-		collections : "channels",
+		collection : "channels",
 		matcher : {"_id" : req.params().id}
 	}
 	eb.send("mongo",fetchChannelMsg,function(reply) {
 		if (reply.status == 'ok') {
-			req.end(reply.result);
+			req.response.end(JSON.stringify(reply.result));
 		} else {
 			req.response.end(reply.message);
 		}
 	});
-	req.response.end("{name: 'channel'}");
 });
 
 
-rm.post('/channles/:id/events',function(req){
-	req.response.putHeader('Location',req.uri + "123");
-	req.response.end("");	
+rm.post('/channels/:channelId/events/',function(req){
+
+	var body = vertx.Buffer();
+	req.dataHandler(function(buffer){
+		body.appendBuffer(buffer);
+	});
+	
+	req.endHandler(function(){
+		var event = JSON.parse(body.toString());
+		event.channelId = req.params().channelId;
+		event.timeStamp = new Date();
+		var createEventMsg = {
+			action : "save",
+			collection : "events",
+			document : event
+		};
+		eb.send("mongo",createEventMsg,function(reply) {
+			if (reply.status == 'ok') {
+				req.response.putHeader('Location',req.uri + reply["_id"]);
+				req.response.end("");
+			} else {
+				req.response.end(reply.message);
+			}
+		});
+	});
 });
 
 rm.get('/channels/:channelId/events/',function(req){
-	req.response.end("");
+	logger.info("get events for channel " + req.params().channelId);
+	var fetchEventsForChannelMsg = {
+		action : "find",
+		collection : "events",
+		matcher : {"channelId" : req.params().channelId}
+	}
+	eb.send("mongo",fetchEventsForChannelMsg,function(reply) {
+		if (reply.status == 'ok') {
+			req.response.end(JSON.stringify(reply.results));
+		} else {
+			req.response.end(reply.message);
+		}
+	});
 });
 
 rm.get('/channels/:channelId/events/:eventId',function(req){
-	req.response.end("");
+	logger.info("get event " + req.params().eventId);
+	var fetchEventMsg = {
+		action : "findone",
+		collection : "events",
+		matcher : {"_id" : req.params().eventId}
+	}
+	eb.send("mongo",fetchEventMsg,function(reply) {
+		if (reply.status == 'ok') {
+			req.response.end(JSON.stringify(reply.result));
+		} else {
+			req.response.end(reply.message);
+		}
+	});
 });
 
 
