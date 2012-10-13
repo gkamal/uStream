@@ -5,7 +5,26 @@ var logger = vertx.logger;
 
 var eb = vertx.eventBus;
 
+
+var config = { prefix: '/echo' };
+
+var httpServer = vertx.createHttpServer()
+
 var rm = new vertx.RouteMatcher();
+
+httpServer.requestHandler(rm);
+
+
+var sockJSServer = vertx.createSockJSServer(httpServer);
+
+sockJSServer.installApp(config, function(sock) {
+    sock.dataHandler(function(buff) {
+        sock.writeBuffer(buff);
+    });
+});
+
+
+httpServer.listen(8080, 'localhost');
 
 
 rm.post('/channels/',function(req) {
@@ -106,10 +125,17 @@ rm.get('/channels/:channelId/events/:eventId',function(req){
 	});
 });
 
-
-rm.getWithRegEx('.*', function(req) {
+rm.get("/", function(req) {
   req.response.sendFile("index.html");
 });
+
+rm.get("/index.html", function(req) {
+  req.response.sendFile("index.html");
+});
+
+// rm.getWithRegEx('.*', function(req) {
+//   req.response.sendFile("index.html");
+// });
 
 
 var mongoServerConf = {
@@ -117,8 +143,8 @@ var mongoServerConf = {
     "db_name": "ustream"    
 }
 
+
 vertx.deployModule('vertx.mongo-persistor-v1.0',mongoServerConf);
 
-vertx.createHttpServer().requestHandler(rm).listen(8080, 'localhost');
 
 
