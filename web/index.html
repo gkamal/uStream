@@ -1,0 +1,51 @@
+<html>
+<body>
+<script src="http://cdn.sockjs.org/sockjs-0.2.1.min.js"></script>
+<script src='vertxbus.js'></script>
+<script src='jquery-1.8.2.min.js'></script>
+<script>
+    $(document).ready(function(){
+    	function prepend(element,data) {
+    		$(element).prepend('<li>' + data + '</li>');
+    	}
+		var eb = new vertx.EventBus('http://localhost:8080/eventbus');
+		function register(channel,element) {
+	      eb.registerHandler(channel, function(message) {
+	      	console.log("received message " +  message.title);
+	      	prepend(element,message.title);
+	      });			
+		}
+		var topnews = '802eed97-12bc-4c05-a212-f620b9275a55';
+		var sports =  '0b597d43-4572-4cb0-a7b2-a1bf0675f65a';
+	    eb.onopen = function() {
+	    	register(topnews,"#topnews");
+	    	register(sports,"#sports");
+		}
+		function populateInitialData(channel,element) {
+			$.getJSON("channels/"+channel+"/events/",function(list) {
+				$.each(list,function(idx,data){
+					console.log(data);
+					prepend(element,data.title);
+				});
+			});
+		}
+		populateInitialData(topnews,"#topnews");
+		populateInitialData(sports,"#sports");
+    });
+</script>
+
+</body>
+<div>
+	<h1>uStream - veiwer</h1>
+	<h4>Top News:</h4>	
+	<ul id="topnews">
+		
+	</ul>
+</div>
+<div>
+	<h4>Sports News:</h4>	
+	<ul id="sports">
+		
+	</ul>
+</div>
+</html>

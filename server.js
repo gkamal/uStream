@@ -5,24 +5,13 @@ var logger = vertx.logger;
 
 var eb = vertx.eventBus;
 
-
-var config = { prefix: '/echo' };
-
 var httpServer = vertx.createHttpServer()
 
 var rm = new vertx.RouteMatcher();
 
 httpServer.requestHandler(rm);
 
-
-var sockJSServer = vertx.createSockJSServer(httpServer);
-
-sockJSServer.installApp(config, function(sock) {
-    sock.dataHandler(function(buff) {
-        sock.writeBuffer(buff);
-    });
-});
-
+vertx.createSockJSServer(httpServer).bridge({prefix: "/eventbus"}, [{}], [{}]);
 
 httpServer.listen(8080, 'localhost');
 
@@ -66,17 +55,42 @@ rm.get('/channels/:id',function(req) {
 });
 
 
-rm.post('/channels/:channelId/events/',function(req){
+rm.put('/channels/:channelId/session',function(req){
+	var body = vertx.Buffer();
+	req.dataHandler(function(buffer){
+		body.appendBuffer(buffer);
+	});
+	req.endHandler(function(){
+		var data = JSON.parse(body.toString());
+		req.response.statusCode = 204;
+		req.response.end("");
+	});	
+});
 
+rm.delete('/channels/:channelId/session',function(req){
+	var body = vertx.Buffer();
+	req.dataHandler(function(buffer){
+		body.appendBuffer(buffer);
+	});
+	req.endHandler(function(){
+		var data = JSON.parse(body.toString());
+		req.response.statusCode = 204;
+		req.response.end("");
+	});	
+});
+
+rm.post('/channels/:channelId/events/',function(req){
 	var body = vertx.Buffer();
 	req.dataHandler(function(buffer){
 		body.appendBuffer(buffer);
 	});
 	
 	req.endHandler(function(){
+		logger.info(body.toString());
 		var event = JSON.parse(body.toString());
 		event.channelId = req.params().channelId;
 		event.timeStamp = new Date();
+		eb.send(req.params().channelId,event);
 		var createEventMsg = {
 			action : "save",
 			collection : "events",
@@ -125,17 +139,16 @@ rm.get('/channels/:channelId/events/:eventId',function(req){
 	});
 });
 
-rm.get("/", function(req) {
-  req.response.sendFile("index.html");
+rm.getWithRegEx('.*', function(req) {
+   var file = '';
+  if (req.path == '/') {
+    file = 'index.html';
+  } else if (req.path.indexOf('..') == -1) {
+    file = req.path;
+  }
+  var fileLoc = 'web/' + file;
+  req.response.sendFile(fileLoc);   
 });
-
-rm.get("/index.html", function(req) {
-  req.response.sendFile("index.html");
-});
-
-// rm.getWithRegEx('.*', function(req) {
-//   req.response.sendFile("index.html");
-// });
 
 
 var mongoServerConf = {
